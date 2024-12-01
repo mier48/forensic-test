@@ -1,50 +1,64 @@
-#!/usr/bin/env python
-#--*--coding:UTF-8 --*--
-
 import socket
 import sys
 
-host = sys.argv[1]
-textport = sys.argv[2]
-archivo = sys.argv[3]
-
-try:
-    s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-except socket.error as e:
-    print("Error en la crreación del socket: %s" %e)
-    sys.exit(1)
-
-try:
-    port=int(textport)
-except ValueError:
-    try:
-        port=socket.getservbyname(host, 'tcp')
-    except socket.error as e:
-        print("No se encuentra el puerto %s" %e)
+def main():
+    if len(sys.argv) != 4:
+        print("Uso: python cliente_tcp.py <host> <puerto> <archivo>")
         sys.exit(1)
 
-try:
-    s.connect((host, port))
-except socket.gaierror as e:
-    print("Error de dirección de conexión al servidor: %s" %e)
-    sys.exit(1)
-except socket.error as e:
-    print("Error de conexión: %s" %e)
-    sys.exit(1)
+    host = sys.argv[1]
+    textport = sys.argv[2]
+    archivo = sys.argv[3]
 
-try:
-    data = "GET %s HTTP/1.0\r\n\r\n" % archivo
-    s.sendall(data.encode())
-except socket.error as e:
-    print("Error de envio de datos: %s" %e)
-    sys.exit(1)
-
-while 1:
+    # Crear el socket
     try:
-        buf=s.recv(2048)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     except socket.error as e:
-        print("Error de recepción de datos: %s" %e)
+        print(f"Error en la creación del socket: {e}")
         sys.exit(1)
-    if not len(buf):
-        break
-    print(buf)
+
+    # Validar el puerto
+    try:
+        port = int(textport)
+    except ValueError:
+        print(f"El puerto '{textport}' no es válido.")
+        sys.exit(1)
+
+    # Conectar al servidor
+    try:
+        s.connect((host, port))
+        print(f"Conectado a {host}:{port}")
+    except socket.gaierror as e:
+        print(f"Error de dirección de conexión al servidor: {e}")
+        sys.exit(1)
+    except socket.error as e:
+        print(f"Error de conexión: {e}")
+        sys.exit(1)
+
+    # Enviar solicitud HTTP
+    try:
+        data = f"GET {archivo} HTTP/1.0\r\nHost: {host}\r\n\r\n"
+        s.sendall(data.encode())
+        print(f"Solicitud enviada: {data.strip()}")
+    except socket.error as e:
+        print(f"Error de envío de datos: {e}")
+        sys.exit(1)
+
+    # Recibir datos del servidor
+    try:
+        while True:
+            buf = s.recv(2048)
+            if not buf:
+                break
+            print(buf.decode('utf-8', errors='replace'))
+    except socket.error as e:
+        print(f"Error de recepción de datos: {e}")
+    except KeyboardInterrupt:
+        print("\nCliente interrumpido por el usuario.")
+    finally:
+        # Cerrar el socket
+        s.close()
+        print("Conexión cerrada.")
+
+if __name__ == "__main__":
+    main()
